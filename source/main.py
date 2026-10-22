@@ -1,4 +1,4 @@
-"""Punt d'entrada del projecte i validació de la configuració local."""
+"""Punt d'entrada del projecte: configuració i descoberta de la primera pàgina."""
 
 import argparse
 from dataclasses import dataclass
@@ -9,6 +9,7 @@ from dotenv import dotenv_values
 from playwright.sync_api import Error as PlaywrightError
 
 from browser import Browser
+from discover import discover_first_page
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -46,7 +47,7 @@ def load_configuration(project_root: Path = PROJECT_ROOT) -> Configuration:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Obrir l'Agenda amb Playwright i comprovar el navegador."
+        description="Descobrir les URL de la primera pàgina de l’Agenda Cultural."
     )
     parser.add_argument(
         "--headed", action="store_true", help="Mostrar la finestra del navegador."
@@ -61,21 +62,20 @@ def main() -> int:
 
     try:
         with Browser(headless=not arguments.headed) as browser:
-            response = browser.page.goto(
-                configuration.url, wait_until="domcontentloaded"
-            )
-            if response is not None and response.status >= 400:
-                raise RuntimeError(f"El servidor ha retornat HTTP {response.status}.")
-            print(f"Pàgina oberta: {browser.page.title()}")
             print(f"User-Agent efectiu: {browser.page.evaluate('navigator.userAgent')}")
+            urls = discover_first_page(browser.page, configuration.url)
+            print(f"Pàgina oberta: {browser.page.title()}")
+            print(f"URL d'esdeveniments de la primera pàgina: {len(urls)}")
+            for index, url in enumerate(urls, start=1):
+                print(f"{index}. {url}")
     except (PlaywrightError, RuntimeError) as error:
-        print(f"Error del navegador: {error}", file=sys.stderr)
+        print(f"Error de navegació o descoberta: {error}", file=sys.stderr)
         return 1
     except KeyboardInterrupt:
         print("Execució interrompuda; recursos del navegador alliberats.", file=sys.stderr)
         return 130
 
-    print("Navegador tancat correctament. La descoberta encara està pendent.")
+    print("Navegador tancat correctament. Encara no s’ha desat cap CSV.")
     return 0
 
 
