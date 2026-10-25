@@ -1,5 +1,3 @@
-"""Gestió reutilitzable del navegador de Playwright."""
-
 from contextlib import ExitStack
 from types import TracebackType
 
@@ -7,13 +5,13 @@ from playwright.sync_api import Page, sync_playwright
 
 
 class Browser:
-    """Obrir Chromium i alliberar-ne els recursos en sortir del bloc with."""
+    """Open Chromium and release its resources when leaving the with block."""
 
     def __init__(
         self,
         *,
         headless: bool = True,
-        user_agent: str = "AgendaCulturalScraper/0.1 (academic project; UOC)",
+        user_agent: str = "Projecte UOC Tipologia i cicle de vida de les dades",
         timeout_ms: int = 30_000,
         navigation_timeout_ms: int = 45_000,
     ) -> None:
