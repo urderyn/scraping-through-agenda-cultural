@@ -9,7 +9,7 @@ from dotenv import dotenv_values
 from playwright.sync_api import Error as PlaywrightError
 
 from browser import Browser
-from discover import discover_first_page
+from discover import discover_first_page, read_event_csv, save_event_urls
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -47,7 +47,7 @@ def load_configuration(project_root: Path = PROJECT_ROOT) -> Configuration:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Descobrir les URL de la primera pàgina de l’Agenda Cultural."
+        description="Descobrir la primera pàgina de l’Agenda i afegir les URL noves al CSV."
     )
     parser.add_argument(
         "--headed", action="store_true", help="Mostrar la finestra del navegador."
@@ -61,6 +61,8 @@ def main() -> int:
         return 2
 
     try:
+        _, existing_rows = read_event_csv(configuration.dataset_path, configuration.url)
+        print(f"URL ja desades: {len(existing_rows)}")
         with Browser(headless=not arguments.headed) as browser:
             print(f"User-Agent efectiu: {browser.page.evaluate('navigator.userAgent')}")
             urls = discover_first_page(browser.page, configuration.url)
@@ -68,14 +70,18 @@ def main() -> int:
             print(f"URL d'esdeveniments de la primera pàgina: {len(urls)}")
             for index, url in enumerate(urls, start=1):
                 print(f"{index}. {url}")
+            added = save_event_urls(configuration.dataset_path, urls, configuration.url)
+            print(f"URL noves afegides: {added}")
+            print(f"URL totals al CSV: {len(existing_rows) + added}")
+            print(f"CSV: {configuration.dataset_path}")
     except (PlaywrightError, RuntimeError) as error:
-        print(f"Error de navegació o descoberta: {error}", file=sys.stderr)
+        print(f"Error d’execució: {error}", file=sys.stderr)
         return 1
     except KeyboardInterrupt:
         print("Execució interrompuda; recursos del navegador alliberats.", file=sys.stderr)
         return 130
 
-    print("Navegador tancat correctament. Encara no s’ha desat cap CSV.")
+    print("Execució finalitzada i navegador tancat correctament.")
     return 0
 
 
