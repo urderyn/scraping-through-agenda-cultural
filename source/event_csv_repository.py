@@ -49,9 +49,8 @@ class EventCsvRepository:
             raise DatasetError(f"Could not read the CSV: {error}") from error
 
     def save_urls(self, urls: list[str]) -> int:
-        """Append only new URLs and return the number of rows added."""
+        """Add new URLs and return the added number"""
         fields, rows = self.read()
-        # URL validation and duplicate checks happen only when saving.
         known_urls = set()
         for row_number, row in enumerate(rows, start=2):
             normalized = normalize_event_url(row["url"], self.__base_url)
@@ -59,11 +58,6 @@ class EventCsvRepository:
                 raise DatasetError(
                     f"CSV record {row_number} has an empty URL "
                     "or one that is invalid for the configured Agenda. The file was not modified."
-                )
-            if normalized in known_urls:
-                raise DatasetError(
-                    "The existing CSV contains duplicate URLs after normalization. "
-                    "Review them before saving; the file was not modified."
                 )
             known_urls.add(normalized)
         new_rows = []
