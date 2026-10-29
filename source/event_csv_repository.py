@@ -80,6 +80,81 @@ class EventCsvRepository:
 
         return len(new_rows)
 
+    def event_exists(self, url: str) -> bool:
+        normalized_url = normalize_event_url(url, self.__base_url)
+        if normalized_url is None:
+            return False
+
+        _, rows = self.read()
+
+        for row in rows:
+            existing_url = normalize_event_url(
+                row.get("url", ""),
+                self.__base_url,
+            )
+            print(existing_url)
+            print(normalized_url)
+            print(row)
+
+            if existing_url == normalized_url:
+                return bool(row.get("titol", "").strip())
+
+        return False
+
+    def update_event(self, url: str, data: dict[str, str]) -> bool:
+        normalized_url = normalize_event_url(url, self.__base_url)
+
+        if normalized_url is None:
+            raise DatasetError("Received an invalid URL.")
+
+        # Validate the data before updating CSV.
+        if not isinstance(data, dict):
+            raise DatasetError("Event data must be a dictionary.")
+
+        for key, value in data.items():
+            if not isinstance(key, str):
+                raise DatasetError("Invalid column name.")
+
+            if not isinstance(value, str):
+                raise DatasetError(
+                    f"Value for column {key!r} must be a string."
+                )
+
+        fields, rows = self.read()
+        if "url" not in fields:
+            raise DatasetError("The CSV does not contain the URL column.")
+
+        # Search row that contains this URL
+        matching_row = None
+
+        for row in rows:
+            existing_url = normalize_event_url(
+                row.get("url", ""),
+                self.__base_url,
+            )
+
+            if existing_url == normalized_url:
+                matching_row = row
+                break
+
+        if matching_row is None:
+            return False
+
+        # Add columns if they still do not exist.
+        for key in data:
+            if key not in fields:
+                fields.append(key)
+
+        # Update only correct values
+        for key, value in data.items():
+            if value.strip():
+                matching_row[key] = value
+
+        # Update CSV
+        self.__write(fields, rows)
+
+        return True
+
     def __write(self, fields: list[str], rows: list[dict[str, str]]) -> None:
         """Replace the CSV only after the temporary file is complete."""
         try:

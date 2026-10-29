@@ -9,6 +9,8 @@ from dotenv import dotenv_values
 
 import discovery
 
+import get_content
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -58,9 +60,14 @@ def main() -> int:
         print(f"Configuration error: {error}", file=sys.stderr)
         return 2
 
-    return discovery.execute(
+
+    discovery_ok = discovery.execute(
         configuration.url, configuration.dataset_path, headed=arguments.headed
     )
+
+    content_ok = get_content.execute(configuration.url, configuration.dataset_path)
+
+    return discovery_ok and content_ok
 
 
 if __name__ == "__main__":
