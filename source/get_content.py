@@ -12,10 +12,13 @@ MIN_DELAY = 1
 def execute(url: str, dataset_path: Path) -> int:
     """ Read CSV to get the URLs and visits each URL to get the data from each activity """
 
+    print("Retrieving the content for each activity")
+
     repository = EventCsvRepository(dataset_path, url)
     _, existing_rows = repository.read()
 
     with requests.Session() as session:
+        # Loop over each url to get its content
         for row in existing_rows:
             url = row["url"]
             if repository.event_exists(url):

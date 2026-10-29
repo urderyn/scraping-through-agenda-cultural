@@ -92,9 +92,6 @@ class EventCsvRepository:
                 row.get("url", ""),
                 self.__base_url,
             )
-            print(existing_url)
-            print(normalized_url)
-            print(row)
 
             if existing_url == normalized_url:
                 return bool(row.get("titol", "").strip())
